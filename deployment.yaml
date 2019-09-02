@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: sample-app-nodejs
-        image: index.docker.io/starkandwayne/sample-app-nodejs@sha256:dbcf564097c8c419d73fd294d297b9aa09c014baf9fc9103747e8e25ccc16bcb
+        image: index.docker.io/starkandwayne/sample-app-nodejs@sha256:51e5e43cf211580ed0aafbf6773683fc91292bd112cd72313a020c9229ca8532
 ---
 apiVersion: v1
 kind: Service
