@@ -22,6 +22,7 @@ resources:
     password: ((docker-hub-password))
 - name: builder-image
   type: docker-image
+  check_every: 1h
   source:
     repository: ((pack-builder-image))
     tag: ((pack-builder-tag))

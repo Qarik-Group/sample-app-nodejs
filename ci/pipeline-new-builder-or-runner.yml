@@ -22,12 +22,14 @@ resources:
     username: ((docker-hub-username))
     password: ((docker-hub-password))
 - name: builder-image
+  check_every: 1h
   type: docker-image
   source:
     repository: ((pack-builder-image))
     tag: ((pack-builder-tag))
 - name: base-run-image
   type: docker-image
+  check_every: 1h
   source:
     repository: ((pack-run-image))
     tag: ((pack-run-tag))
