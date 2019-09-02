@@ -108,7 +108,7 @@ kubectl delete -f pod.yaml
 ```plain
 kubectl apply -f deployment.yaml
 kubectl get all
-curl <LB>:8080
+curl <LB>
 ```
 
 ### Rollout update
@@ -116,7 +116,13 @@ curl <LB>:8080
 In one terminal:
 
 ```plain
-watch "kubectl get pod; echo; curl -sS <LB>:8080"
+watch "curl -sS <LB>"
+```
+
+In another, watch pod changes:
+
+```plain
+kubectl get pods -w
 ```
 
 In another, create `:0.0.2` image and deploy:
@@ -131,3 +137,6 @@ In another, create `:0.0.2` image and deploy:
 ```plain
 kubectl delete -f deployment.yaml
 ```
+
+## kpack demo
+
