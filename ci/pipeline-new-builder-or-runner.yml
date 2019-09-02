@@ -1,5 +1,6 @@
-# fly -t ohio-drnic sp -p sample-app-nodejs -c ci/pipeline-just-app.yml \
+# fly -t ohio-drnic sp -p sample-app-nodejs -c ci/pipeline-new-builder.yml \
 #     -v pack-builder-image=cloudfoundry/cnb -v pack-builder-tag=cflinuxfs3 \
+#     -v pack-run-image=cloudfoundry/cnb-run -v pack-run-tag=cflinuxfs3 \
 #     -v image=starkandwayne/sample-app-nodejs:latest
 
 resource_types:
@@ -21,11 +22,28 @@ resources:
     version: latest
     username: ((docker-hub-username))
     password: ((docker-hub-password))
+- name: ((pack-builder-image)):((pack-builder-tag))
+  type: docker-image
+  source:
+    repository: ((pack-builder-image))
+    version: ((pack-builder-tag))
+- name: ((pack-run-image)):((pack-run-tag))
+  type: docker-image
+  source:
+    repository: ((pack-run-image))
+    version: ((pack-run-tag))
 
 jobs:
 - name: build-image
   plan:
-  - {get: git, trigger: true}
+  - get: git
+    trigger: true
+  - get: ((pack-builder-image)):((pack-builder-tag))
+    trigger: true
+    params: {skip_download: true}
+  - get: ((pack-run-image)):((pack-run-tag))
+    trigger: true
+    params: {skip_download: true}
   - put: image
     params:
       build: git
