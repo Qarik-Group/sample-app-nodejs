@@ -20,18 +20,18 @@ resources:
     repository: ((image))
     username: ((docker-hub-username))
     password: ((docker-hub-password))
-- name: ((pack-builder-image)):((pack-builder-tag))
+- name: builder-image
   type: docker-image
   source:
     repository: ((pack-builder-image))
-    version: ((pack-builder-tag))
+    tag: ((pack-builder-tag))
 
 jobs:
 - name: build-image
   plan:
   - get: git
     trigger: true
-  - get: ((pack-builder-image)):((pack-builder-tag))
+  - get: builder-image
     trigger: true
     params: {skip_download: true}
   - put: image
