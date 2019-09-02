@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sample-app-nodejs
+spec:
+  containers:
+  - name: sample-app-nodejs
+    image: starkandwayne/sample-app-nodejs

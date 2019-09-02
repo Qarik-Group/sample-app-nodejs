@@ -1,0 +1,8 @@
+{
+  "name": "sample-app-nodejs",
+  "version": "1.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

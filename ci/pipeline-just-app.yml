@@ -1,0 +1,8 @@
+jobs:
+- name: build-image
+
+resources:
+- name: git
+  type: git
+  source:
+    uri: 
