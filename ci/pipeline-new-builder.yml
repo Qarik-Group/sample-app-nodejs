@@ -1,6 +1,6 @@
 # fly -t ohio-drnic sp -p sample-app-nodejs -c ci/pipeline-new-builder.yml \
 #     -v pack-builder-image=cloudfoundry/cnb -v pack-builder-tag=cflinuxfs3 \
-#     -v image=starkandwayne/sample-app-nodejs:latest
+#     -v image=starkandwayne/sample-app-nodejs
 
 resource_types:
 - name: pack-image-resource
