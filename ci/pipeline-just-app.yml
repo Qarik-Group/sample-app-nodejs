@@ -1,8 +1,32 @@
-jobs:
-- name: build-image
+# fly -t ohio-drnic sp -p sample-app-nodejs -c ci/pipeline-just-app.yml \
+#     -v pack-builder-image=cloudfoundry/cnb -v pack-builder-tag=cflinuxfs3 \
+#     -v image=starkandwayne/sample-app-nodejs:latest
+
+resource_types:
+- name: pack-image-resource
+  type: docker-image
+  privileged: true
+  source:
+    repository: bstick12/pack-concourse-resource
 
 resources:
 - name: git
   type: git
   source:
-    uri: 
+    uri: https://github.com/starkandwayne/sample-app-nodejs.git
+- name: image
+  type: pack-image-resource
+  source:
+    repository: ((image))
+    username: ((docker-hub-username))
+    password: ((docker-hub-password))
+
+jobs:
+- name: build-image
+  plan:
+  - {get: git, trigger: true}
+  - put: image
+    params:
+      build: git
+      builder: ((pack-builder-image)):((pack-builder-tag))
+

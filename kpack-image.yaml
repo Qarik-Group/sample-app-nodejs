@@ -8,5 +8,5 @@ spec:
   serviceAccount: service-account
   source:
     git:
-      url: https://github.com/drnic/sample-app-nodejs.git
+      url: https://github.com/starkandwayne/sample-app-nodejs.git
       revision: master
