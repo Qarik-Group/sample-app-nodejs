@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: sample-app-nodejs
-        image: starkandwayne/sample-app-nodejs:0.0.1
+        image: index.docker.io/starkandwayne/sample-app-nodejs@sha256:dbcf564097c8c419d73fd294d297b9aa09c014baf9fc9103747e8e25ccc16bcb
 ---
 apiVersion: v1
 kind: Service
@@ -26,5 +26,5 @@ spec:
   type: LoadBalancer
   ports:
   - protocol: TCP
-    port: 8080
+    port: 80
     targetPort: 8080
