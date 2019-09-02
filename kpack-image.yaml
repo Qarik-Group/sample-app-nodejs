@@ -3,7 +3,7 @@ kind: Image
 metadata:
   name: sample-app-nodejs
 spec:
-  builderRef: cloudfoundry/cnb:cflinuxfs3
+  builderRef: cflinuxfs3-builder
   serviceAccount: service-account
   source:
     git:
