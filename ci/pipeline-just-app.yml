@@ -18,7 +18,6 @@ resources:
   type: pack-image-resource
   source:
     repository: ((image))
-    version: latest
     username: ((docker-hub-username))
     password: ((docker-hub-password))
 
