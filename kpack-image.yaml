@@ -5,6 +5,7 @@ metadata:
 spec:
   builderRef: cflinuxfs3-builder
   serviceAccount: service-account
+  cacheSize: "1.5Gi"
   source:
     git:
       url: https://github.com/starkandwayne/sample-app-nodejs.git
