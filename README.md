@@ -140,3 +140,159 @@ kubectl delete -f deployment.yaml
 
 ## kpack demo
 
+Kpack is an alternate approach to Cloud Native Buildpack lifecycle management. Rather than run `pack` on local machine, `kpack` is a system running atop your Kubernetes cluster that continuously monitors Git repositories and generates updated OCI images for any new commits.
+
+`kpack` does not wrap `pack`, rather they both share the CNB lifecycle project to perform the same sequence for discovery and applying buildpacks to source code.
+
+The `kpack-image.yaml` assumes you have a service account `service-account` setup, and a CNB builder resource named `cflinuxfs3-builder`. Any builder can be used, as long as it can support this NodeJS application.
+
+```plain
+$ kubectl get serviceaccounts,builder.build.pivotal.io
+NAME                             SECRETS   AGE
+serviceaccount/default           1         5m10s
+serviceaccount/service-account   3         4m47s
+
+NAME                                          AGE
+builder.build.pivotal.io/cflinuxfs3-builder   4m
+```
+
+To initiate the first kpack build of this Git repository into an OCI/docker image:
+
+```plain
+kubectl apply -f kpack-image.yaml
+```
+
+This `image` resource initiates an initial `build`:
+
+```plain
+$ kubectl get images,builds
+NAME                                       LATESTIMAGE   READY
+image.build.pivotal.io/sample-app-nodejs                 Unknown
+
+NAME                                                     IMAGE   SUCCEEDED
+build.build.pivotal.io/sample-app-nodejs-build-1-zd2ht           Unknown
+```
+
+You can stream the in-progress CNB lifecycle with `kpack`'s `logs` CLI:
+
+```plain
+logs -image sample-app-nodejs
+```
+
+The initial build may take a minute whilst it initially clones the Git repo, etc.
+
+The `image` and `build` are now updated with the resulting OCI ID for the target registry:
+
+```plain
+$ kubectl get images,builds
+NAME                                       LATESTIMAGE                                                                                                               READY
+image.build.pivotal.io/sample-app-nodejs   index.docker.io/starkandwayne/sample-app-nodejs@sha256:bf7ccdbb7c4790748c8613e9f7aac11de529bcb9cbb84ceea56f52045dbfe485   True
+
+NAME                                                     IMAGE                                                                                                                     SUCCEEDED
+build.build.pivotal.io/sample-app-nodejs-build-1-zd2ht   index.docker.io/starkandwayne/sample-app-nodejs@sha256:bf7ccdbb7c4790748c8613e9f7aac11de529bcb9cbb84ceea56f52045dbfe485   True
+```
+
+We can now deploy our application to Kubernetes with this new OCI by editing `deployment.yaml` and replacing the `image: index.docker.io...` line with the full image ID `index.docker.io/starkandwayne/sample-app-nodejs@sha256:bf7ccdbb7c4790748c8613e9f7aac11de529bcb9cbb84ceea56f52045dbfe485` from the example above.
+
+```plain
+$ kubectl apply -f deployment.yaml
+deployment.apps/sample-app-nodejs created
+service/sample-app-nodejs created
+```
+
+We can watch for the deployment's service to be allocated its load balancer:
+
+```plain
+$ kubectl get services -w
+NAME                TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+kubernetes          ClusterIP      10.99.0.1     <none>        443/TCP        12m
+sample-app-nodejs   LoadBalancer   10.99.12.88   <pending>     80:30653/TCP   16s
+sample-app-nodejs   LoadBalancer   10.99.12.88   35.189.19.51   80:30653/TCP   61s
+```
+
+The application can now be reached via the LoadBalancer's IP:
+
+```plain
+$ curl 35.189.19.51
+Hello World!
+```
+
+In another terminal, poll this endpoint to observe the future change:
+
+```plain
+$ watch curl -sS 35.189.19.51
+```
+
+If in `server.js`, I change `Hello World!` to `Hello kpack`, save, commit, and push, then kpack will discover the new commit and start a new `build`:
+
+```plain
+$ git commit -m "test hello kpack"
+$ git push
+$ kubectl get builds -w
+NAME                              AGE
+sample-app-nodejs-build-1-zd2ht   11m
+sample-app-nodejs-build-2-gqljg   0s
+```
+
+Once the new `build-2` has been created, we can switch to `logs` and stream its output:
+
+```plain
+logs -image sample-app-nodejs
+```
+
+The build sequence is much faster this time.
+
+We now have one `image`, but two `builds`:
+
+```plain
+$ kubectl get images,builds
+NAME                                       LATESTIMAGE                                                                                                               READY
+image.build.pivotal.io/sample-app-nodejs   index.docker.io/starkandwayne/sample-app-nodejs@sha256:a2fd6417143a37cd27467f9bf38c42b8d9faaf031b2769e63ea5d8fa10180a4c   True
+
+NAME                                                     IMAGE                                                                                                                     SUCCEEDED
+build.build.pivotal.io/sample-app-nodejs-build-1-zd2ht   index.docker.io/starkandwayne/sample-app-nodejs@sha256:bf7ccdbb7c4790748c8613e9f7aac11de529bcb9cbb84ceea56f52045dbfe485   True
+build.build.pivotal.io/sample-app-nodejs-build-2-gqljg   index.docker.io/starkandwayne/sample-app-nodejs@sha256:a2fd6417143a37cd27467f9bf38c42b8d9faaf031b2769e63ea5d8fa10180a4c   True
+```
+
+As before, update `deployment.yaml` `image: index.docker.io...` with the new OCI ID:
+
+```yaml
+    spec:
+      containers:
+      - name: sample-app-nodejs
+        image: index.docker.io/starkandwayne/sample-app-nodejs@sha256:a2fd6417143a37cd27467f9bf38c42b8d9faaf031b2769e63ea5d8fa10180a4c
+```
+
+And apply the updated deployment:
+
+```plain
+$ kubectl apply -f deployment.yaml
+deployment.apps/sample-app-nodejs configured
+service/sample-app-nodejs unchanged
+```
+
+The `curl` terminal will intermittently show both `Hello World!` and `Hello kpack!` until all containers are replaced with the new image:
+
+```plain
+$ kubectl get pods -w
+NAME                                        READY   STATUS              RESTARTS   AGE
+sample-app-nodejs-64f94f848d-4r94q          1/1     Terminating         0          8m4s
+sample-app-nodejs-64f94f848d-5sp5q          1/1     Running             0          8m4s
+sample-app-nodejs-9c58f6897-5wnss           1/1     Running             0          23s
+sample-app-nodejs-9c58f6897-qkh4b           0/1     ContainerCreating   0          1s
+sample-app-nodejs-9c58f6897-xqbm5           1/1     Running             0          12s
+sample-app-nodejs-build-1-zd2ht-build-pod   0/1     Completed           0          14m
+sample-app-nodejs-build-2-gqljg-build-pod   0/1     Completed           0          3m12s
+sample-app-nodejs-64f94f848d-4r94q   0/1   Terminating   0     8m4s
+sample-app-nodejs-64f94f848d-4r94q   0/1   Terminating   0     8m5s
+sample-app-nodejs-64f94f848d-4r94q   0/1   Terminating   0     8m5s
+
+$ kubectl get pods
+NAME                                        READY   STATUS      RESTARTS   AGE
+sample-app-nodejs-9c58f6897-5wnss           1/1     Running     0          85s
+sample-app-nodejs-9c58f6897-qkh4b           1/1     Running     0          63s
+sample-app-nodejs-9c58f6897-xqbm5           1/1     Running     0          74s
+sample-app-nodejs-build-1-zd2ht-build-pod   0/1     Completed   0          15m
+sample-app-nodejs-build-2-gqljg-build-pod   0/1     Completed   0          4m14s
+```
+
