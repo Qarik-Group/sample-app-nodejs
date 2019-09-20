@@ -3,7 +3,9 @@ kind: Image
 metadata:
   name: sample-app-nodejs
 spec:
-  builderRef: cflinuxfs3-builder
+  builder:
+    name: cflinuxfs3-builder
+    kind: Builder
   serviceAccount: service-account
   cacheSize: "1.5Gi"
   source:
