@@ -3,7 +3,7 @@
 Decide on a builder that contains buildpacks that support this application.
 
 ```plain
-pack set-default-builder cloudfoundry/cnb:cflinuxfs3
+pack set-default-builder cloudfoundry/cnb:bionic
 ```
 
 Auto-detect this application against the builder's buildpacks:
