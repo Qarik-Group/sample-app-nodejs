@@ -4,7 +4,7 @@ metadata:
   name: sample-app-nodejs
 spec:
   builder:
-    name: cflinuxfs3-builder
+    name: cf-bionic-builder
     kind: Builder
   serviceAccount: service-account
   cacheSize: "1.5Gi"
